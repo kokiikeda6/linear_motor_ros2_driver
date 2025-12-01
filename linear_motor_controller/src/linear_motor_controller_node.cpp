@@ -1,36 +1,88 @@
 #include "rclcpp/rclcpp.hpp"
 #include "linear_motor_msgs/srv/act.hpp"
+#include <iostream>
+#include <gpiod.hpp>
+#include <unistd.h>
+
+const std::string CHIP_NAME = "gpiochip0";
+const int IN1_PIN = 14; // GPIO 14
+const int IN2_PIN = 15; // GPIO 15
 
 class LinearMotorControllerNode : public rclcpp::Node
 {
   public:
   LinearMotorControllerNode() : Node("linear_motor_controller_node")
   {
-    this->declare_parameter<int>("IN1_PIN", 14); //GPIO14
-    this->declare_parameter<int>("IN2_PIN", 15); //GPIO15
-
-    this->get_parameter("IN1_PIN", in1_pin);
-    this->get_parameter("IN2_PIN", in2_pin);
-
     act_srv = this->create_service<linear_motor_msgs::srv::Act>(
       "action_command",
       std::bind(&LinearMotorControllerNode::act_srv_callback, this, std::placeholders::_1, std::placeholders::_2)
     );
+
+    try {
+            // 1. チップを開く
+            chip_ = std::make_unique<gpiod::chip>(CHIP_NAME);
+
+            // 2. ピン（ライン）を取得
+            line_in1_ = chip_->get_line(IN1_PIN);
+            line_in2_ = chip_->get_line(IN2_PIN);
+
+            // 3. ピンを出力モードで要求 (request) する
+            line_in1_.request({"motor-controller", gpiod::line_request::DIRECTION_OUTPUT, 0}, 0); // 初期値 LOW
+            line_in2_.request({"motor-controller", gpiod::line_request::DIRECTION_OUTPUT, 0}, 0); // 初期値 LOW
+
+            RCLCPP_INFO(this->get_logger(), "GPIO lines successfully acquired and set to output.");
+            
+        } catch (const std::exception& e) {
+          RCLCPP_ERROR(this->get_logger(), "GPIO initialization failed: %s", e.what());
+          throw;
+        }
   }
 
   private:
+  std::unique_ptr<gpiod::chip> chip_; // GPIOチップオブジェクト
+  gpiod::line line_in1_;             // IN1ピンのラインオブジェクト
+  gpiod::line line_in2_;             // IN2ピンのラインオブジェクト
   rclcpp::Service<linear_motor_msgs::srv::Act>::SharedPtr act_srv;
 
-  int in1_pin, in2_pin;
-  
   void act_srv_callback(
     const std::shared_ptr<linear_motor_msgs::srv::Act::Request> request,
-    std::shared_ptr<linear_motor_msgs::srv::Act::Response> response
-  ) const
+    std::shared_ptr<linear_motor_msgs::srv::Act::Response> response)
   {
+    if(request->action=="up"){
+      shrink_motor();
+      sleep(4);
+      stop_motor();
+    }
+
+    if(request->action=="down"){
+      extend_motor();
+      sleep(4);
+      stop_motor();
+    }
+
     response->result = "success";
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request\naction: [%s]", request->action.c_str());
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "sending back response: [%s]", response->result.c_str());
+  }
+  
+  void extend_motor(){
+    line_in1_.set_value(1);
+    line_in2_.set_value(0);
+  }
+
+  void shrink_motor(){
+    line_in1_.set_value(0);
+    line_in2_.set_value(1);
+  }
+
+  void brake_motor(){
+    line_in1_.set_value(1);
+    line_in2_.set_value(1);
+  }
+
+  void stop_motor(){
+    line_in1_.set_value(0);
+    line_in2_.set_value(0);
   }
 
 };
