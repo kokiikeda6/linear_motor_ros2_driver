@@ -29,8 +29,18 @@ ament_target_dependencies(linear_motor_controller_node
   linear_motor_msgs
 )
 
+add_executable(linear_motor_client_node
+  src/linear_motor_client_node.cpp
+)
+
+ament_target_dependencies(linear_motor_client_node
+  rclcpp
+  linear_motor_msgs
+)
+
 install(TARGETS
   linear_motor_controller_node
+  linear_motor_client_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

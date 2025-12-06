@@ -4,7 +4,7 @@
 #include <gpiod.hpp>
 #include <unistd.h>
 
-const std::string CHIP_NAME = "gpiochip0";
+const std::string CHIP_NAME = "gpiochip4"; //Raspi5の場合
 const int IN1_PIN = 14; // GPIO 14
 const int IN2_PIN = 15; // GPIO 15
 

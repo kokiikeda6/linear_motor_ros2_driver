@@ -31,7 +31,7 @@ int main(int argc, char **argv)
       rclcpp::FutureReturnCode::SUCCESS)
   {
     auto response = up_future.get();
-    RCLCPP_INFO(node->get_logger(), "Response: success = %s", response->result ? "success: [up]" : "success: [down]");
+    RCLCPP_INFO(node->get_logger(), "Response: success = %s", response->result.c_str());
   }
   else
   {
