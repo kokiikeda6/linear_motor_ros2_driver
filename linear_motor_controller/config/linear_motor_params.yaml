@@ -1,0 +1,4 @@
+linear_motor_controller_node:
+    ros__parameters:
+        extend_distance: 12.0 # [mm]
+        extend_speed: 4.0 # [mm/s]

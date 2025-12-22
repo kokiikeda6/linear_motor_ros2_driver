@@ -15,6 +15,12 @@ class LinearMotorControllerNode : public rclcpp::Node
   public:
   LinearMotorControllerNode() : Node("linear_motor_controller_node")
   {
+    this->declare_parameter<std::float_t>("extend_distance", 4.0);  // [mm]
+    this->declare_parameter<std::float_t>("extend_speed", 4.0); // [mm/s]
+
+    this->get_parameter("extend_distance", extend_distance);
+    this->get_parameter("extend_distance", extend_speed);
+
     act_srv = this->create_service<linear_motor_msgs::srv::Act>(
       "action_command",
       std::bind(&LinearMotorControllerNode::act_srv_callback, this, std::placeholders::_1, std::placeholders::_2)
@@ -46,19 +52,35 @@ class LinearMotorControllerNode : public rclcpp::Node
   gpiod::line line_in2_;             // IN2ピンのラインオブジェクト
   rclcpp::Service<linear_motor_msgs::srv::Act>::SharedPtr act_srv;
 
+  float_t extend_distance;
+  float_t extend_speed;
+  float_t operating_time = extend_distance / extend_speed;
+
   void act_srv_callback(
     const std::shared_ptr<linear_motor_msgs::srv::Act::Request> request,
     std::shared_ptr<linear_motor_msgs::srv::Act::Response> response)
   {
     if(request->action=="up"){
       shrink_motor();
-      rclcpp::sleep_for(500ms);
+      rclcpp::sleep_for(rclcpp::Duration::from_seconds(operating_time).to_chrono<std::chrono::milliseconds>());
       stop_motor();
     }
 
     if(request->action=="down"){
       extend_motor();
-      rclcpp::sleep_for(500ms);
+      rclcpp::sleep_for(rclcpp::Duration::from_seconds(operating_time).to_chrono<std::chrono::milliseconds>());
+      stop_motor();
+    }
+
+    if(request->action=="up_1mm"){
+      shrink_motor();
+      rclcpp::sleep_for(250ms);
+      stop_motor();
+    }
+
+    if(request->action=="down_1mm"){
+      extend_motor();
+      rclcpp::sleep_for(250ms);
       stop_motor();
     }
 
