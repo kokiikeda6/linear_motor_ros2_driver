@@ -4,6 +4,8 @@
 #include <gpiod.hpp>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 const std::string CHIP_NAME = "gpiochip4"; //Raspi5の場合
 const int IN1_PIN = 14; // GPIO 14
 const int IN2_PIN = 15; // GPIO 15
@@ -50,13 +52,13 @@ class LinearMotorControllerNode : public rclcpp::Node
   {
     if(request->action=="up"){
       shrink_motor();
-      sleep(4);
+      rclcpp::sleep_for(500ms);
       stop_motor();
     }
 
     if(request->action=="down"){
       extend_motor();
-      sleep(4);
+      rclcpp::sleep_for(500ms);
       stop_motor();
     }
 
