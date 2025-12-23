@@ -58,17 +58,17 @@ class LinearMotorControllerNode : public rclcpp::Node
 
   void act_srv_callback(
     const std::shared_ptr<linear_motor_msgs::srv::Act::Request> request,
-    std::shared_ptr<linear_motor_msgs::srv::Act::Response> response)
+    std::shared_ptr<linear_motor_msgs::srv::Act::Response> response) 
   {
     if(request->action=="up"){
       shrink_motor();
-      rclcpp::sleep_for(rclcpp::Duration::from_seconds(operating_time).to_chrono<std::chrono::milliseconds>());
+      std::this_thread::sleep_for(1500ms);
       stop_motor();
     }
 
     if(request->action=="down"){
       extend_motor();
-      rclcpp::sleep_for(rclcpp::Duration::from_seconds(operating_time).to_chrono<std::chrono::milliseconds>());
+      std::this_thread::sleep_for(1500ms);
       stop_motor();
     }
 
